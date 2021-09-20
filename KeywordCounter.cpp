@@ -208,7 +208,7 @@ bool Counter::addInStack(string s, char* c) {
 		while (*p_temp == ' ' || *p_temp == '\n') {
 			p_temp++;
 		}
-		if (*p_temp == 'i') {
+		if (*p_temp == 'i'&&*(p_temp+1)=='f') {
 			if_else_stack.push("elseif");
 			return true;
 		}
