@@ -63,6 +63,9 @@ void UserInterface::outputResult(OutputData* out) {
 	if (out->level >= 3) {
 		cout << "if-else num: " << out->if_else_num << endl;
 	}
+	if (out->level == 4) {
+		cout << "if-elseif-else num: " << out->if_elseif_else_num << endl;
+	}
 
 }
 
@@ -222,7 +225,7 @@ void Counter::countIfElse(string s, char* c) {
 		while (if_else_stack.top() != "if") {
 			else_if = true;
 			if_else_stack.pop();
-			out.if_elseif_else_num++;
+			
 		}
 		//´ËÊ±Õ»¶¥ÊÇ if
 		if_else_stack.pop();
