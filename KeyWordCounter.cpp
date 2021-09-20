@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 //因为是小程序，为了代码编写的简便就直接引用 std
 using namespace std;
@@ -17,11 +18,12 @@ struct UserInput {
   int level;
 };
 struct OutputData {
+	int level;
 	int keyword_num;
 	int switch_num;
-	int case_num;
 	int if_else_num;
 	int if_elseif_else_num;
+	vector<int> case_list;
 };
 struct IgnoreList {
 	bool double_slash; //   //
@@ -31,6 +33,7 @@ struct IgnoreList {
 	bool ignore_symbol_before; //当前需忽视的符号之前有无需忽视的符号
 	int quote_time; // 引号出现的次数
 };
+
 //用户输入界面，并且显示结果
 class UserInterface {
   public:
@@ -45,7 +48,18 @@ void UserInterface::fillInput(UserInput *input) {
   cin >> input->level;
 }
 void UserInterface::outputResult(OutputData* out) {
-  cout << out->keyword_num << endl;
+  if (out->level >= 1) {
+	cout << "total num: " << out->keyword_num << endl;
+  }
+  if (out->level >= 2) {
+	cout << "switch num: " << out->switch_num << endl;
+	cout << "case num: ";
+	for (int i = 0; i < out->case_list.size(); i++) {
+	  cout << out->case_list[i] << " ";
+	}
+	cout << endl;
+  }
+  
 }
 
 //处理文件
@@ -96,17 +110,18 @@ class Counter {
 	IgnoreList flags;
 	bool isSymbolIgnore(const string &s, int i, IgnoreList *flags);
 	void countKeyword(string s);
+	void countSwitchCase(string s, int *case_list_index);
   public:
-	Counter(const string arr[],int size);
+	Counter(const string arr[],int size,int level);
 	void startCount(string text, int level);
 	OutputData* getOutput();
 };
-Counter::Counter(const string arr[], int size) {
+Counter::Counter(const string arr[], int size,int level) {
   for (int i = 0; i < size; i++) {
 	keyword_map.emplace(arr[i], 0); //效率比 insert 快
   }
   flags = {false,false,false,false,false,0};
-  out = { 0,0,0,0,0 };
+  out = { level, 0,0,0,0 };
 }
 bool Counter::isSymbolIgnore(const string &s,int i, IgnoreList *flags) {
   if (s[i - 1] == '#' && !flags->ignore_symbol_before) {
@@ -153,9 +168,20 @@ void Counter::countKeyword(string s) {
 	out.keyword_num++;
   }
 }
+void Counter::countSwitchCase(string s, int *case_list_index) {
+  if (s == "switch") {
+	out.switch_num++;
+	out.case_list.push_back(0);
+	(*case_list_index)++;
+  }
+  else if (s == "case") {
+	out.case_list[*case_list_index]++;
+  }
+}
 void Counter::startCount(string text, int level) {
-  int index = 0;
+  int index = 0, switch_num_temp = 0,case_list_index = -1;
   string word;
+
   for (int i = 1; i < text.size(); i++) {
 	if (isSymbolIgnore(text, i, &flags)) {
 	  continue;
@@ -165,6 +191,7 @@ void Counter::startCount(string text, int level) {
 	}
 	if (isalpha(text[i-1]) && !isalpha(text[i])) { //此时可提取单词
 	  word = text.substr(index, i - index);
+	  countSwitchCase(word, &case_list_index);
 	  countKeyword(word);
 	}
   }
@@ -182,7 +209,7 @@ int main() {
   handler.findFile(&input); 
   string text=handler.readFile();
   handler.closeStream();
-  Counter counter(keywords,arr_size);
+  Counter counter(keywords,arr_size,input.level);
   counter.startCount(text, input.level);
   UserInterface::outputResult(counter.getOutput());
   return 0;
