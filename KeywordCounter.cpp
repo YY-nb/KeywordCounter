@@ -35,7 +35,7 @@ struct IgnoreList {
 	int quote_time; // 引号出现的次数
 };
 
-//用户输入界面，并且显示结果
+/******用户输入界面，并且显示结果******/
 class UserInterface {
 public:
 	static void fillInput(UserInput* input); //等待用户输入
@@ -75,8 +75,9 @@ void UserInterface::outputResult(OutputData* out) {
 	}
 
 }
+/***************************/
 
-//处理文件
+/*********处理文件*********/
 class FileHandler {
 private:
 	ifstream file;
@@ -116,7 +117,9 @@ string FileHandler::readFile() {
 	buffer << file.rdbuf(); //rdbuf()可以实现一个流对象指向的内容用另一个流对象来输出
 	return buffer.str();
 }
+/***************************/
 
+/*********关键字统计**********/
 class Counter {
 private:
 	OutputData out;
@@ -295,6 +298,7 @@ OutputData* Counter::getOutput() {
 	OutputData* p_out = &out;
 	return p_out;
 }
+/***************************/
 
 int main() {
 	int arr_size = sizeof(keywords) / sizeof(keywords[0]);
@@ -312,14 +316,4 @@ int main() {
 
 }
 
-/*
- auto	break	case	char	const	continue	default	do
-double	else	enum	extern	float	for	goto	if
-int	long	register	return	short	signed	sizeof	static
-struct	switch	typedef	union	unsigned	void	volatile	while
- */
- //左大括号前总是有空格
- //分号之前没有空格
- //缩进用2个空格（谷歌规范）
- //赋值运算符前后总是有空格，一元运算符前无空格，如 ++x
 
