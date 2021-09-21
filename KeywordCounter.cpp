@@ -116,11 +116,11 @@ private:
 	unordered_map<string, int> keyword_map;
 	IgnoreList flags;
 	stack<string> if_else_stack;
-	bool isSymbolIgnore(const string& s, int i, IgnoreList* flags);
-	bool addInStack(string s, char* c);
+	bool isSymbolIgnore(const string &s, int i, IgnoreList *flags);
+	bool addInStack(string s, char *c);
 	void countKeyword(string s);
 	void countSwitchCase(string s, int* case_list_index);
-	void countIfElse(string s, char* c);
+	void countIfElse(string s, char *c);
 public:
 	Counter(const string arr[], int size, int level);
 	void startCount(string text, int level);
@@ -133,7 +133,7 @@ Counter::Counter(const string arr[], int size, int level) {
 	flags = { false,false,false,false,false,0 };
 	out = { level, 0,0,0,0 };
 }
-bool Counter::isSymbolIgnore(const string& s, int i, IgnoreList* flags) {
+bool Counter::isSymbolIgnore(const string &s, int i, IgnoreList *flags) {
 	if (s[i - 1] == '#' && !flags->ignore_symbol_before) {
 		flags->macro = true;
 		flags->ignore_symbol_before = true;
@@ -171,14 +171,14 @@ bool Counter::isSymbolIgnore(const string& s, int i, IgnoreList* flags) {
 		flags->macro = false;
 		flags->ignore_symbol_before = false;
 	}
-	return (flags->double_slash || flags->quotes || flags->slash_star);
+	return (flags->double_slash || flags->quotes || flags->slash_star || flags->macro);
 }
 void Counter::countKeyword(string s) {
 	if (keyword_map.find(s) != keyword_map.end()) {
 		out.keyword_num++;
 	}
 }
-void Counter::countSwitchCase(string s, int* case_list_index) {
+void Counter::countSwitchCase(string s, int *case_list_index) {
 	if (s == "switch") {
 		out.switch_num++;
 		out.case_list.push_back(0);
@@ -188,7 +188,7 @@ void Counter::countSwitchCase(string s, int* case_list_index) {
 		out.case_list[*case_list_index]++;
 	}
 }
-bool Counter::addInStack(string s, char* c) {
+bool Counter::addInStack(string s, char *c) {
 	if (s == "if") {
 		char* p_temp = c - 3;
 		while (*p_temp == ' ' || *p_temp == '\n') {
@@ -209,7 +209,6 @@ bool Counter::addInStack(string s, char* c) {
 			p_temp++;
 		}
 		if (*p_temp == 'i'&&*(p_temp+1)=='f') {
-			if_else_stack.push("elseif");
 			return true;
 		}
 		else    //此时是 else ，要准备与栈里的匹配
@@ -219,7 +218,7 @@ bool Counter::addInStack(string s, char* c) {
 
 	}
 }
-void Counter::countIfElse(string s, char* c) {
+void Counter::countIfElse(string s, char *c) {
 	if (!addInStack(s, c)) {  //此时是 else
 		bool else_if = false;
 		while (if_else_stack.top() != "if") {
@@ -262,6 +261,7 @@ OutputData* Counter::getOutput() {
 	OutputData* p_out = &out;
 	return p_out;
 }
+
 int main() {
 	int arr_size = sizeof(keywords) / sizeof(keywords[0]);
 
