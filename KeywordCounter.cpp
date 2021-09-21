@@ -55,10 +55,17 @@ void UserInterface::outputResult(OutputData* out) {
 	if (out->level >= 2) {
 		cout << "switch num: " << out->switch_num << endl;
 		cout << "case num: ";
-		for (int i = 0; i < out->case_list.size(); i++) {
-			cout << out->case_list[i] << " ";
+		if (out->case_list.empty()) {
+			cout << 0 <<endl;
 		}
-		cout << endl;
+		else
+		{
+			for (int i = 0; i < out->case_list.size(); i++) {
+				cout << out->case_list[i] << " ";
+			}
+			cout << endl;
+		}
+		
 	}
 	if (out->level >= 3) {
 		cout << "if-else num: " << out->if_else_num << endl;
@@ -115,12 +122,13 @@ private:
 	OutputData out;
 	unordered_map<string, int> keyword_map;
 	IgnoreList flags;
-	stack<string> if_else_stack;
-	bool isSymbolIgnore(const string &s, int i, IgnoreList *flags);
-	bool addInStack(string s, char *c);
+	stack<string> matching_stack;
+	bool isSymbolIgnore(const string& s, int i, IgnoreList* flags);
+	bool addInStack(string s, char* c);
+	void addBracketInStack(char* c);
 	void countKeyword(string s);
 	void countSwitchCase(string s, int* case_list_index);
-	void countIfElse(string s, char *c);
+	void countIfElse(string s, char* c);
 public:
 	Counter(const string arr[], int size, int level);
 	void startCount(string text, int level);
@@ -133,7 +141,7 @@ Counter::Counter(const string arr[], int size, int level) {
 	flags = { false,false,false,false,false,0 };
 	out = { level, 0,0,0,0 };
 }
-bool Counter::isSymbolIgnore(const string &s, int i, IgnoreList *flags) {
+bool Counter::isSymbolIgnore(const string& s, int i, IgnoreList* flags) {
 	if (s[i - 1] == '#' && !flags->ignore_symbol_before) {
 		flags->macro = true;
 		flags->ignore_symbol_before = true;
@@ -178,7 +186,7 @@ void Counter::countKeyword(string s) {
 		out.keyword_num++;
 	}
 }
-void Counter::countSwitchCase(string s, int *case_list_index) {
+void Counter::countSwitchCase(string s, int* case_list_index) {
 	if (s == "switch") {
 		out.switch_num++;
 		out.case_list.push_back(0);
@@ -188,18 +196,33 @@ void Counter::countSwitchCase(string s, int *case_list_index) {
 		out.case_list[*case_list_index]++;
 	}
 }
-bool Counter::addInStack(string s, char *c) {
+void Counter::addBracketInStack(char* c) {
+	string s(1, *c); // char to string
+	if (*c == '{') {
+		
+		matching_stack.push(s);
+	}
+	if (*c == '}') {
+		if (matching_stack.top() == "{") {
+			matching_stack.pop();
+		}
+		else {
+			matching_stack.push(s);
+		}
+	}
+}
+bool Counter::addInStack(string s, char* c) {
 	if (s == "if") {
 		char* p_temp = c - 3;
 		while (*p_temp == ' ' || *p_temp == '\n') {
 			p_temp--;
 		}
 		if (*p_temp == 'e') {
-			if_else_stack.push("elseif");
+			matching_stack.push("elseif");
 		}
-		else
+		else  //此时是if
 		{
-			if_else_stack.push(s);
+			matching_stack.push(s);
 		}
 		return true;
 	}
@@ -208,7 +231,7 @@ bool Counter::addInStack(string s, char *c) {
 		while (*p_temp == ' ' || *p_temp == '\n') {
 			p_temp++;
 		}
-		if (*p_temp == 'i'&&*(p_temp+1)=='f') {
+		if (*p_temp == 'i' && *(p_temp + 1) == 'f') {
 			return true;
 		}
 		else    //此时是 else ，要准备与栈里的匹配
@@ -218,16 +241,25 @@ bool Counter::addInStack(string s, char *c) {
 
 	}
 }
-void Counter::countIfElse(string s, char *c) {
+void Counter::countIfElse(string s, char* c) {
 	if (!addInStack(s, c)) {  //此时是 else
 		bool else_if = false;
-		while (if_else_stack.top() != "if") {
-			else_if = true;
-			if_else_stack.pop();
+		while (matching_stack.top() != "if") {
+			if (matching_stack.top() == "}") {  //应对未消掉的{}，例如 if{if elseif} else
+				do {
+					matching_stack.pop();
+				} while (matching_stack.top() != "{");
+				matching_stack.pop(); //去掉 "{"
+			}
+			if (matching_stack.top() == "elseif") {
+				else_if = true;
+				matching_stack.pop();
+			}
 			
+
 		}
 		//此时栈顶是 if
-		if_else_stack.pop();
+		matching_stack.pop();
 		if (else_if) {
 			out.if_elseif_else_num++;
 		}
@@ -246,6 +278,7 @@ void Counter::startCount(string text, int level) {
 		if (isSymbolIgnore(text, i, &flags)) {
 			continue;
 		}
+		
 		if (!isalpha(text[i - 1]) && isalpha(text[i])) {
 			index = i;
 		}
@@ -255,6 +288,7 @@ void Counter::startCount(string text, int level) {
 			countKeyword(word);
 			countIfElse(word, &text[i]);
 		}
+		addBracketInStack(&text[i - 1]);
 	}
 }
 OutputData* Counter::getOutput() {
