@@ -227,7 +227,7 @@ void Counter::addBracketInStack(char* c) {
 bool Counter::addInStack(string s, char* c) {
 	if (s == "if") {
 		char* p_temp = c - 3;
-		while (*p_temp == ' ' || *p_temp == '\n') {
+		while (*p_temp == ' ' ) {
 			p_temp--;
 		}
 		if (*p_temp == 'e') {
@@ -241,7 +241,7 @@ bool Counter::addInStack(string s, char* c) {
 	}
 	if (s == "else") {
 		char* p_temp = c;
-		while (*p_temp == ' ' || *p_temp == '\n') {
+		while (*p_temp == ' ' ) {
 			p_temp++;
 		}
 		if (*p_temp == 'i' && *(p_temp + 1) == 'f') {
