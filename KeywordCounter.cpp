@@ -285,7 +285,7 @@ void Counter::startCount(string text, int level) {
 		if (!isalpha(text[i - 1]) && isalpha(text[i])) {
 			index = i;
 		}
-		if (isalpha(text[i - 1]) && !isalpha(text[i])) { //此时可提取单词
+		if (isalpha(text[i - 1]) && !isalpha(text[i])) {             //此时可提取单词
 			word = text.substr(index, i - index);
 			countSwitchCase(word, &case_list_index);
 			countKeyword(word);
@@ -302,7 +302,6 @@ OutputData* Counter::getOutput() {
 
 int main() {
 	int arr_size = sizeof(keywords) / sizeof(keywords[0]);
-
 	UserInput input;
 	FileHandler handler;
 	UserInterface::fillInput(&input);
