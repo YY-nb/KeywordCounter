@@ -91,13 +91,13 @@ public:
 
 };
 void FileHandler::findFile(UserInput* input) {
-	file.open(input->file_path);
+	file.open(input->file_path.c_str());
 	while (!isFileOpenSuccess()) {
 		cout << "\nThe file was not successfully opened."
 			<< "\nPlease check if the file currently exists."
 			<< endl;
 		UserInterface::fillInput(input);
-		file.open(input->file_path);
+		file.open(input->file_path.c_str());
 	}
 }
 bool FileHandler::isFileOpenSuccess() {
@@ -291,7 +291,7 @@ void Counter::startCount(string text, int level) {
 		if (!isalpha(text[i - 1]) && isalpha(text[i])) {
 			index = i;
 		}
-		if (isalpha(text[i - 1]) && !isalpha(text[i])) {             //此时可提取单词
+		if (isalpha(text[i - 1]) && !isalpha(text[i])) {  //此时可提取单词
 			word = text.substr(index, i - index);
 			countSwitchCase(word, &case_list_index);
 			countKeyword(word);
