@@ -65,7 +65,6 @@ void UserInterface::outputResult(OutputData* out) {
 			}
 			cout << endl;
 		}
-		
 	}
 	if (out->level >= 3) {
 		cout << "if-else num: " << out->if_else_num << endl;
@@ -128,6 +127,9 @@ private:
 	stack<string> matching_stack;
 	bool isSymbolIgnore(const string& s, int i, IgnoreList* flags);
 	bool addInStack(string s, char* c);
+	void handleSlash(const string& s, int i, IgnoreList* flags);
+	void handleMacro(const string& s, int i, IgnoreList* flags);
+	void handleQuote(const string& s, int i, IgnoreList* flags);
 	void addBracketInStack(char* c);
 	void countKeyword(string s);
 	void countSwitchCase(string s, int* case_list_index);
@@ -145,10 +147,12 @@ Counter::Counter(const string arr[], int size, int level) {
 	out = { level, 0,0,0,0 };
 }
 bool Counter::isSymbolIgnore(const string& s, int i, IgnoreList* flags) {
-	if (s[i - 1] == '#' && !flags->ignore_symbol_before) {
-		flags->macro = true;
-		flags->ignore_symbol_before = true;
-	}
+	handleMacro(s, i, flags);
+	handleSlash(s, i, flags);
+	handleQuote(s, i, flags);
+	return (flags->double_slash || flags->quotes || flags->slash_star || flags->macro);
+}
+void Counter::handleSlash(const string& s, int i, IgnoreList* flags) {
 	if (s[i - 1] == '/' && s[i] == '/' && !flags->ignore_symbol_before) {
 		flags->double_slash = true;
 		flags->ignore_symbol_before = true;
@@ -161,6 +165,22 @@ bool Counter::isSymbolIgnore(const string& s, int i, IgnoreList* flags) {
 		flags->slash_star = false;
 		flags->ignore_symbol_before = false;
 	}
+	if (s[i - 1] == '\n' && flags->double_slash) {
+		flags->double_slash = false;
+		flags->ignore_symbol_before = false;
+	}
+}
+void Counter::handleMacro(const string& s, int i, IgnoreList* flags) {
+	if (s[i - 1] == '#' && !flags->ignore_symbol_before) {
+		flags->macro = true;
+		flags->ignore_symbol_before = true;
+	}
+	if (s[i - 1] == '\n' && flags->macro) {
+		flags->macro = false;
+		flags->ignore_symbol_before = false;
+	}
+}
+void Counter::handleQuote(const string& s, int i, IgnoreList* flags) {
 	//处理引号比较复杂，引号前避免转义字符，前面没有其他该忽略的字符或前面已经有一个相匹配的引号
 	if (s[i - 1] == '"' && s[i - 2] != '\\' && (!flags->ignore_symbol_before || flags->quote_time == 1)) {
 		flags->quotes = !flags->quotes; //计算机里引号是一样的，所以只能取反
@@ -173,16 +193,6 @@ bool Counter::isSymbolIgnore(const string& s, int i, IgnoreList* flags) {
 			flags->ignore_symbol_before = true;
 		}
 	}
-
-	if (s[i - 1] == '\n' && flags->double_slash) {
-		flags->double_slash = false;
-		flags->ignore_symbol_before = false;
-	}
-	if (s[i - 1] == '\n' && flags->macro) {
-		flags->macro = false;
-		flags->ignore_symbol_before = false;
-	}
-	return (flags->double_slash || flags->quotes || flags->slash_star || flags->macro);
 }
 void Counter::countKeyword(string s) {
 	if (keyword_map.find(s) != keyword_map.end()) {
@@ -258,8 +268,6 @@ void Counter::countIfElse(string s, char* c) {
 				else_if = true;
 				matching_stack.pop();
 			}
-			
-
 		}
 		//此时栈顶是 if
 		matching_stack.pop();
@@ -269,9 +277,7 @@ void Counter::countIfElse(string s, char* c) {
 		else {
 			out.if_else_num++;
 		}
-
 	}
-
 }
 void Counter::startCount(string text, int level) {
 	int index = 0, switch_num_temp = 0, case_list_index = -1;
