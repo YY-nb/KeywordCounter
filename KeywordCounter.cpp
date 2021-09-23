@@ -146,6 +146,7 @@ Counter::Counter(const string arr[], int size, int level) {
 	flags = { false,false,false,false,false,0 };
 	out = { level, 0,0,0,0 };
 }
+//忽略特殊的字符，如 //  /**/  " "  #
 bool Counter::isSymbolIgnore(const string& s, int i, IgnoreList* flags) {
 	handleMacro(s, i, flags);
 	handleSlash(s, i, flags);
@@ -194,11 +195,13 @@ void Counter::handleQuote(const string& s, int i, IgnoreList* flags) {
 		}
 	}
 }
+//计算关键字数量
 void Counter::countKeyword(string s) {
 	if (keyword_map.find(s) != keyword_map.end()) {
 		out.keyword_num++;
 	}
 }
+//计算 Switch-case
 void Counter::countSwitchCase(string s, int* case_list_index) {
 	if (s == "switch") {
 		out.switch_num++;
@@ -209,6 +212,7 @@ void Counter::countSwitchCase(string s, int* case_list_index) {
 		out.case_list[*case_list_index]++;
 	}
 }
+//处理 { }
 void Counter::addBracketInStack(char* c) {
 	string s(1, *c); // char to string
 	if (*c == '{') {
@@ -224,6 +228,7 @@ void Counter::addBracketInStack(char* c) {
 		}
 	}
 }
+// if elseif else 的栈操作
 bool Counter::addInStack(string s, char* c) {
 	if (s == "if") {
 		char* p_temp = c - 3;
@@ -254,6 +259,7 @@ bool Counter::addInStack(string s, char* c) {
 
 	}
 }
+//处理 else
 void Counter::countIfElse(string s, char* c) {
 	if (!addInStack(s, c)) {  //此时是 else
 		bool else_if = false;
@@ -279,6 +285,7 @@ void Counter::countIfElse(string s, char* c) {
 		}
 	}
 }
+//处理转成字符串的文本
 void Counter::startCount(string text, int level) {
 	int index = 0, switch_num_temp = 0, case_list_index = -1;
 	string word;
@@ -300,6 +307,7 @@ void Counter::startCount(string text, int level) {
 		addBracketInStack(&text[i - 1]);
 	}
 }
+//取出 Output
 OutputData* Counter::getOutput() {
 	OutputData* p_out = &out;
 	return p_out;
